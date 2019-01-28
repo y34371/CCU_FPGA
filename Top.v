@@ -32,7 +32,7 @@ module Top(
 	
 	input [15:0] DSP_PWM_IN,
 	output [7:0] DSP_PWM_OUT,
-	output [7:0] LIGHT_OUT,
+	output [7:0] Relay,
 	
 	input [7:0] FAULT_INPUT,
 	output FAULT_XINT
@@ -51,7 +51,6 @@ module Top(
 //		output Adc_Rst
    );
 	
-	assign LIGHT_OUT = 8'b1111_1111;
 	assign FAULT_XINT = FAULT_INPUT[0] & FAULT_INPUT[1];
 	 
 	wire CLK;
@@ -111,6 +110,21 @@ module Top(
 			OUT_REG_1 <= OUT_REG_1;
 	end
 	
+	
+	// Relay register
+	reg [15:0] RELAY_REG;
+	assign Relay = RELAY_REG[7:0];
+	
+	always@(posedge CLK)
+	begin
+		if(RESET)
+			RELAY_REG <= 16'h0000;
+		else if(!CSn && !WEn && (Addr == 14'h0040))
+			RELAY_REG <= Data;
+		else
+			RELAY_REG <= RELAY_REG;
+	end
+	
 	// FPGA Status register 1
 	reg [15:0] STATUS_REG_1;
 	always@(posedge CLK)
@@ -127,6 +141,7 @@ module Top(
 				14'h0010: data_out_buf <= OUT_REG_1;
 				14'h0020: data_out_buf <= STATUS_REG_1;
 				14'h0021: data_out_buf <= FAULT_INPUT;
+				14'h0040: data_out_buf <= RELAY_REG;
 				default:  data_out_buf <= data_out_buf;
 			endcase
 		else
