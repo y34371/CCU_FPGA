@@ -32,7 +32,8 @@ module Top(
 	
 	input [15:0] DSP_PWM_IN,
 	output [7:0] DSP_PWM_OUT,
-	output [7:0] Relay,
+	output [3:0] Relay,
+	output [3:0] Light,
 	
 	input [7:0] FAULT_INPUT,
 	output FAULT_XINT
@@ -51,6 +52,8 @@ module Top(
 //		output Adc_Rst
    );
 	
+	wire [3:0] Light;
+	assign Light = 4'b1111;
 	assign FAULT_XINT = FAULT_INPUT[0] & FAULT_INPUT[1];
 	 
 	wire CLK;
@@ -113,7 +116,7 @@ module Top(
 	
 	// Relay register
 	reg [15:0] RELAY_REG;
-	assign Relay = RELAY_REG[7:0];
+	assign Relay = RELAY_REG[3:0];
 	
 	always@(posedge CLK)
 	begin
@@ -129,7 +132,7 @@ module Top(
 	reg [15:0] STATUS_REG_1;
 	always@(posedge CLK)
 	begin
-		STATUS_REG_1 <= {9'b100_0000,CLK_STATUS[2:0],CLK_LOCKED,LED2,LED1,RESET};
+		STATUS_REG_1 <= {8'b0100_0000,FAULT_XINT,CLK_STATUS[2:0],CLK_LOCKED,LED2,LED1,RESET};
 	end
 	
 	always@(posedge CLK)
