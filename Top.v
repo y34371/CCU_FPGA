@@ -51,7 +51,7 @@ module Top(
 //		output Adc_Rst
    );
 	
-	assign FAULT_XINT = FAULT_INPUT[0] & FAULT_INPUT[1];
+	assign FAULT_XINT = FAULT_INPUT[0] & FAULT_INPUT[1] & FAULT_INPUT[2] & FAULT_INPUT[3];
 	 
 	wire CLK;
 	wire CLK_100M;
