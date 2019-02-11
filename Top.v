@@ -31,9 +31,9 @@ module Top(
 	input OEn,
 	
 	input [15:0] DSP_PWM_IN,
-	output [7:0] DSP_PWM_OUT,
-	output [3:0] Relay,
-	output [3:0] Light,
+	output [15:0] DSP_PWM_OUT,
+//	output [7:0] Relay,
+//	output [3:0] Light,
 	
 	input [7:0] FAULT_INPUT,
 	output FAULT_XINT
@@ -52,8 +52,8 @@ module Top(
 //		output Adc_Rst
    );
 	
-	wire [3:0] Light;
-	assign Light = 4'b1111;
+//	wire [3:0] Light;
+//	assign Light = 4'b1111;
 	assign FAULT_XINT = FAULT_INPUT[0] & FAULT_INPUT[1];
 	 
 	wire CLK;
@@ -75,7 +75,18 @@ module Top(
 	reg [15:0] data_out_buf; 
 	assign Data = (!CSn && !OEn) ? data_out_buf :16'bzzzz_zzzz_zzzz_zzzz;
 	
-	assign DSP_PWM_OUT = DSP_PWM_IN;
+//	assign DSP_PWM_OUT = DSP_PWM_IN;
+
+	reg [15:0] DSP_PWM_OUT;
+	always@(posedge CLK)
+	begin
+		if(RESET)
+			DSP_PWM_OUT <= 16'h0000;
+		else if(!CSn && !WEn && (Addr == 14'h0015))
+			DSP_PWM_OUT <= Data;
+		else
+			DSP_PWM_OUT <= DSP_PWM_OUT;
+	end
 
 	// LED2 Test
 	reg [31:0] led_counter;
@@ -116,7 +127,7 @@ module Top(
 	
 	// Relay register
 	reg [15:0] RELAY_REG;
-	assign Relay = RELAY_REG[3:0];
+//	assign Relay = RELAY_REG[7:0];
 	
 	always@(posedge CLK)
 	begin
@@ -142,6 +153,7 @@ module Top(
 		else if(!CSn && !OEn)
 			case (Addr)
 				14'h0010: data_out_buf <= OUT_REG_1;
+				14'h0015: data_out_buf <= DSP_PWM_OUT;
 				14'h0020: data_out_buf <= STATUS_REG_1;
 				14'h0021: data_out_buf <= FAULT_INPUT;
 				14'h0040: data_out_buf <= RELAY_REG;
