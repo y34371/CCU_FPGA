@@ -30,6 +30,8 @@ module Top(
 	input WEn,
 	input OEn,
 	
+	input [3:0] capture,
+	
 	input [15:0] DSP_PWM_IN,
 	output [15:0] DSP_PWM_OUT,
 //	output [7:0] Relay,
@@ -75,18 +77,18 @@ module Top(
 	reg [15:0] data_out_buf; 
 	assign Data = (!CSn && !OEn) ? data_out_buf :16'bzzzz_zzzz_zzzz_zzzz;
 	
-//	assign DSP_PWM_OUT = DSP_PWM_IN;
+	assign DSP_PWM_OUT = DSP_PWM_IN;
 
-	reg [15:0] DSP_PWM_OUT;
-	always@(posedge CLK)
-	begin
-		if(RESET)
-			DSP_PWM_OUT <= 16'h0000;
-		else if(!CSn && !WEn && (Addr == 14'h0015))
-			DSP_PWM_OUT <= Data;
-		else
-			DSP_PWM_OUT <= DSP_PWM_OUT;
-	end
+//	reg [15:0] DSP_PWM_OUT;
+//	always@(posedge CLK)
+//	begin
+//		if(RESET)
+//			DSP_PWM_OUT <= 16'h0000;
+//		else if(!CSn && !WEn && (Addr == 14'h0015))
+//			DSP_PWM_OUT <= Data;
+//		else
+//			DSP_PWM_OUT <= DSP_PWM_OUT;
+//	end
 
 	// LED2 Test
 	reg [31:0] led_counter;
@@ -128,6 +130,67 @@ module Top(
 	// Relay register
 	reg [15:0] RELAY_REG;
 //	assign Relay = RELAY_REG[7:0];
+
+	// Capture Unit
+	
+	reg cap_pos_event;
+	reg [15:0] cap_counter;
+	always@(posedge CLK)
+	begin
+		if(cap_pos_event)
+			cap_counter <= 0;
+		else
+			cap_counter <= cap_counter + 1;
+	end
+	
+	reg [3:0] capture_sample;
+	always@(posedge CLK)
+	begin
+		capture_sample <= capture;
+	end
+	
+	always@(posedge CLK)
+	begin
+		if(capture[0] && (~capture_sample[0]))
+			cap_pos_event <= 1;
+		else
+			cap_pos_event <= 0;
+	end
+	
+	reg cap_neg_event;
+	always@(posedge CLK)
+	begin
+		if((~capture[0]) && capture_sample[0])
+			cap_neg_event <= 1;
+		else
+			cap_neg_event <= 0;
+	end
+	
+	reg [15:0] cap_stamp_1_z1;
+	reg [15:0] cap_stamp_1_z0;
+	reg [15:0] cap_prd;
+	reg [15:0] cap_pos;
+	always@(posedge CLK)
+	begin
+		if(cap_pos_event)
+		begin
+			cap_stamp_1_z1 <= cap_stamp_1_z0;
+			cap_stamp_1_z0 <= cap_counter;
+			cap_prd <= cap_stamp_1_z0 - cap_stamp_1_z1;
+			cap_pos <= cap_stamp_2_z0 - cap_stamp_1_z1;
+		end
+	end
+	
+	reg [15:0] cap_stamp_2_z1;
+	reg [15:0] cap_stamp_2_z0;
+	always@(posedge CLK)
+	begin
+		if(cap_neg_event)
+		begin
+			cap_stamp_2_z1 <= cap_stamp_2_z0;
+			cap_stamp_2_z0 <= cap_counter;
+		end
+	end
 	
 	always@(posedge CLK)
 	begin
@@ -157,6 +220,13 @@ module Top(
 				14'h0020: data_out_buf <= STATUS_REG_1;
 				14'h0021: data_out_buf <= FAULT_INPUT;
 				14'h0040: data_out_buf <= RELAY_REG;
+				14'h0050: data_out_buf <= cap_stamp_1_z1;
+				14'h0051: data_out_buf <= cap_stamp_1_z0;
+				14'h0052: data_out_buf <= cap_stamp_2_z1;
+				14'h0053: data_out_buf <= cap_stamp_2_z0;
+				14'h0054: data_out_buf <= cap_prd;
+				14'h0055: data_out_buf <= cap_pos;
+				
 				default:  data_out_buf <= data_out_buf;
 			endcase
 		else
