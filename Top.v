@@ -51,7 +51,7 @@ module Top(
 //		output Adc_Rst
    );
 	
-	assign FAULT_XINT = FAULT_INPUT[0] & FAULT_INPUT[1] & FAULT_INPUT[2] & FAULT_INPUT[3];
+	assign FAULT_XINT = FAULT_INPUT[0] & FAULT_INPUT[1] & FAULT_INPUT[2] & FAULT_INPUT[3] & FAULT_INPUT[4] & FAULT_INPUT[5];
 	 
 	wire CLK;
 	wire CLK_100M;
@@ -72,7 +72,7 @@ module Top(
 	reg [15:0] data_out_buf; 
 	assign Data = (!CSn && !OEn) ? data_out_buf :16'bzzzz_zzzz_zzzz_zzzz;
 	
-	assign DSP_PWM_OUT = DSP_PWM_IN;
+	assign DSP_PWM_OUT = DSP_PWM_IN[7:0];
 
 	// LED2 Test
 	reg [31:0] led_counter;
